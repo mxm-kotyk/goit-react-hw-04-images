@@ -1,8 +1,8 @@
 {
-  "name": "goit-react-hw-04-phonebook",
+  "name": "goit-react-hw-04-images",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://mxm-kotyk.github.io/goit-react-hw-04-phonebook",
+  "homepage": "https://mxm-kotyk.github.io/goit-react-hw-04-images",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
