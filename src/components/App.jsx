@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { AppWrapper, CenteredContainer } from './App.styled';
 import { Searchbar } from './Searchbar';
 import { ImageGallery } from './ImageGallery';
@@ -6,87 +6,92 @@ import { LoadMoreButton } from './LoadMoreButton';
 import { Loader } from './Loader';
 import * as API from './services/pixabay-api';
 
-export class App extends Component {
-  state = {
-    searchQuery: '',
-    images: [],
-    isLoading: false,
-    page: 1,
-    error: null,
-    totalImages: 0,
-  };
+export const App = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [error, setError] = useState(null);
+  const [totalImages, setTotalImages] = useState(0);
 
-  async componentDidUpdate(_, prevState) {
-    const { searchQuery, page } = this.state;
+  useEffect(() => {
+    if (!searchQuery) return;
 
+    getSearchResult(searchQuery, page);
+  }, [page, searchQuery]);
+
+  const getSearchResult = async (searchQuery, page) => {
+    setIsLoading(true);
     try {
-      if (prevState.searchQuery !== searchQuery) {
-        this.setState({ images: [] });
-        const searchResult = await this.getSearchResult(searchQuery, page);
-        this.setState({ images: searchResult });
-      }
-
-      if (prevState.page !== page && page !== 1) {
-        const searchResult = await this.getSearchResult(searchQuery, page);
-        this.setState(pState => ({
-          images: [...pState.images, ...searchResult],
-        }));
-        setTimeout(() => {
-          window.scrollBy({
-            top: 510,
-            behavior: 'smooth',
-          });
-        }, 150);
-      }
+      const result = await API.getImages(searchQuery, page);
+      setTotalImages(result.total);
+      setImages(prev => [...prev, ...result.hits]);
     } catch (error) {
-      this.setState({ error: error.message });
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
     }
-  }
-
-  getSearchResult = async (searchQuery, page) => {
-    this.setState({ isLoading: true });
-    const result = await API.getImages(searchQuery, page);
-    this.setState({ isLoading: false, totalImages: result.total });
-    return result.hits;
   };
 
-  handleSubmit = searchQuery => {
-    this.setState({ searchQuery, page: 1 });
+  const handleSubmit = searchQuery => {
+    setSearchQuery(prev => {
+      if (prev !== searchQuery) {
+        setImages([]);
+      }
+    });
+    setSearchQuery(searchQuery);
+    setPage(1);
+    setError(null);
   };
 
-  handleLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const handleLoadMore = () => {
+    setPage(prev => prev + 1);
+    setTimeout(() => {
+      window.scrollBy({
+        top: 510,
+        behavior: 'smooth',
+      });
+    }, 400);
   };
 
-  render() {
-    const { images, isLoading, totalImages, searchQuery, error } = this.state;
-    const { handleSubmit, handleLoadMore } = this;
+  const errorMessage = error && (
+    <h2>
+      Ooops, something went wrong... Server says: "{error}". Try reloading the
+      page.
+    </h2>
+  );
 
-    let infoBlock = error ? (
+  const noResultsMessage = images.length === 0 &&
+    searchQuery !== '' &&
+    !isLoading &&
+    !error && (
       <h2>
-        Ooops, something went wrong... Server says: "{error}". Try reloading the
-        page.
+        Sorry, there are no images matching "{searchQuery}". Please try again.
       </h2>
-    ) : isLoading ? (
-      <Loader />
-    ) : images.length === 0 ? (
-      searchQuery !== '' && (
-        <h2>
-          Sorry, there are no images matching "{searchQuery}". Please try again.
-        </h2>
-      )
-    ) : images.length === totalImages ? (
-      <h2>We're sorry, but you've reached the end of search results.</h2>
-    ) : (
-      <LoadMoreButton onClick={handleLoadMore} />
     );
 
-    return (
-      <AppWrapper>
-        <Searchbar onSubmit={handleSubmit} />
-        <ImageGallery images={images} />
-        <CenteredContainer>{infoBlock}</CenteredContainer>
-      </AppWrapper>
+  const endOfResultsMessage = images.length === totalImages &&
+    images.length !== 0 && (
+      <h2>We're sorry, but you've reached the end of search results.</h2>
     );
-  }
-}
+
+  const loadingIndicator = isLoading && <Loader />;
+
+  const loadMoreButton = images.length !== totalImages && !isLoading && (
+    <LoadMoreButton onClick={handleLoadMore} />
+  );
+
+  return (
+    <AppWrapper>
+      <Searchbar onSubmit={handleSubmit} />
+      <ImageGallery images={images} />
+      <CenteredContainer>
+        {errorMessage}
+        {noResultsMessage}
+        {endOfResultsMessage}
+        {loadingIndicator}
+        {loadMoreButton}
+      </CenteredContainer>
+    </AppWrapper>
+  );
+};

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Formik } from 'formik';
+import { useFormik } from 'formik';
 import {
   Header,
   SearchForm,
@@ -9,34 +9,33 @@ import {
   SearchIcon,
 } from './Searchbar.styled';
 
-const initialState = {
-  searchQuery: '',
-};
-
 export const Searchbar = ({ onSubmit }) => {
-  const handleSubmit = (values, actions) => {
-    onSubmit(values.searchQuery);
-    actions.resetForm();
-  };
+  const formik = useFormik({
+    initialValues: { searchQuery: '' },
+    onSubmit: ({ searchQuery }) => {
+      onSubmit(searchQuery);
+      formik.resetForm();
+    },
+  });
 
   return (
     <Header>
-      <Formik initialValues={initialState} onSubmit={handleSubmit}>
-        <SearchForm>
-          <SearchButton type="submit">
-            <SearchIcon />
-            <SearchButtonLabel>Search</SearchButtonLabel>
-          </SearchButton>
+      <SearchForm onSubmit={formik.handleSubmit}>
+        <SearchButton type="submit">
+          <SearchIcon />
+          <SearchButtonLabel>Search</SearchButtonLabel>
+        </SearchButton>
 
-          <SearchField
-            name="searchQuery"
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-          />
-        </SearchForm>
-      </Formik>
+        <SearchField
+          name="searchQuery"
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          onChange={formik.handleChange}
+          value={formik.values.searchQuery}
+        />
+      </SearchForm>
     </Header>
   );
 };
