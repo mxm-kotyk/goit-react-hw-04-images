@@ -33,13 +33,9 @@ export const App = () => {
     }
   };
 
-  const handleSubmit = searchQuery => {
-    setSearchQuery(prev => {
-      if (prev !== searchQuery) {
-        setImages([]);
-      }
-    });
-    setSearchQuery(searchQuery);
+  const handleSubmit = query => {
+    if (query !== searchQuery) setImages([]);
+    setSearchQuery(query);
     setPage(1);
     setError(null);
   };
